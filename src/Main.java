@@ -9,12 +9,17 @@ public class Main {
         System.out.println("Hello World!");
 
 
+        doLambdaChecks();
 
+    }
+
+    private static void doLambdaChecks() {
         ArrayList<Person> people = new ArrayList<Person>();
         people.add(new Person("John", 51, Person.Sex.MALE));
         people.add(new Person("Mary", 3, Person.Sex.FEMALE));
         people.add(new Person("Joe", 61, Person.Sex.MALE));
-      //  printPersonsWithinAgeRange(people, 40,55);
+        people.add(new Person("Molly", 2, Person.Sex.FEMALE));
+        //  printPersonsWithinAgeRange(people, 40,55);
 
         final Consumer<Person> printPersonDetails = new Consumer<Person>() {
             @Override
@@ -23,21 +28,22 @@ public class Main {
             }
         };
         CheckAgeLimit checkAgeLimit = new CheckAgeLimit(40, 55);
-        doSomethingOnPersonsBasedOnSomeCriteria(people, checkAgeLimit, printPersonDetails);
+        doSomethingOnPersonsBasedOnSomeCriteria(people, checkAgeLimit, person->"<40 to 55>  " + person.name + " " + person.getAge(), detail -> System.out.println(detail));
 
-        doSomethingOnPersonsBasedOnSomeCriteria(people, person -> person.gender.equals(Person.Sex.FEMALE), person -> person.printPerson());
+        System.out.println("Females: ");
+        doSomethingOnPersonsBasedOnSomeCriteria(people, person -> person.gender.equals(Person.Sex.FEMALE), person -> person.name, detail -> System.out.println(detail));
 
-        doSomethingOnPersonsBasedOnSomeCriteria(people, person -> person.gender.equals(Person.Sex.FEMALE), person -> person.printPerson());
+        System.out.println("Males: ");
+        doSomethingOnPersonsBasedOnSomeCriteria(people, person -> person.gender.equals(Person.Sex.MALE), person -> person.name,detail -> System.out.println(detail));
         CheckPerson matchNoPerson = person -> false;
 
-        doSomethingOnPersonsBasedOnSomeCriteria(people, matchNoPerson,printPersonDetails);
-        Function<Person,Person> fatherOf = new Function<Person, Person>() {
-            @Override
-            public Person apply(Person person) {
-                return new Person("father", 1, Person.Sex.MALE);
-            }
-        };
+        System.out.println("NoMatch: ");
+        doSomethingOnPersonsBasedOnSomeCriteria(people, matchNoPerson, null, null);
 
+        System.out.println("Children: ");
+        doSomethingOnListIfPredicateApplies(people, person -> person.getAge() < 18, person -> person.name, detail -> System.out.println(detail));
+        System.out.println("Children (using lambdas and Aggregate operations on Stream) :");
+        people.stream().filter(person -> person.getAge() < 18).map(person -> person.name).forEach( detail -> System.out.println(detail));
     }
 
 
@@ -57,11 +63,22 @@ public class Main {
     }
 
 
-    private static void doSomethingOnPersonsBasedOnSomeCriteria(ArrayList<Person> people, Predicate<Person> checkPerson, Consumer<Person> consumer) {
+    private static void doSomethingOnPersonsBasedOnSomeCriteria(ArrayList<Person> people, Predicate<Person> checkPerson, Function<Person, String> mapper, Consumer<String> consumer) {
         for (Person person : people) {
             if (checkPerson.test(person) )
             {
-                consumer.accept(person);
+                final String result = mapper.apply(person);
+                consumer.accept(result);
+            }
+        }
+    }
+
+    private static <X, Y> void doSomethingOnListIfPredicateApplies(ArrayList<X> people, Predicate<X> validation, Function<X, Y> mapper, Consumer<Y> consumer) {
+        for (X person : people) {
+            if (validation.test(person) )
+            {
+                final Y result = mapper.apply(person);
+                consumer.accept(result);
             }
         }
     }
@@ -84,4 +101,5 @@ public class Main {
 
     private interface CheckPerson extends Predicate<Person>{
     }
+
 }
